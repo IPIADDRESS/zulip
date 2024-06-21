@@ -403,6 +403,37 @@ def do_update_embedded_data(
     send_event_on_commit(user_profile.realm, event, list(map(user_info, ums)))
 
 
+def do_update_message_rendered_content(
+    user_profile: UserProfile,
+    message: Message,
+    rendered_content: str,
+) -> None:
+    message.rendered_content = rendered_content
+    message.save(update_fields=["rendered_content"])
+
+    update_message_cache([message])
+    event: dict[str, Any] = {
+        "type": "update_message",
+        "user_id": None,
+        "edit_timestamp": datetime_to_timestamp(timezone_now()),
+        "message_id": message.id,
+        "message_ids": [message.id],
+        "content": message.content,
+        "rendered_content": rendered_content,
+        "rendering_only": True,
+    }
+
+    ums = UserMessage.objects.filter(message=message.id)
+
+    def user_info(um: UserMessage) -> dict[str, Any]:
+        return {
+            "id": um.user_profile_id,
+            "flags": um.flags_list(),
+        }
+
+    send_event_on_commit(user_profile.realm, event, list(map(user_info, ums)))
+
+
 def get_visibility_policy_after_merge(
     orig_topic_visibility_policy: int, target_topic_visibility_policy: int
 ) -> int:

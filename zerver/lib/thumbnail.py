@@ -8,6 +8,7 @@ from typing import TypeVar
 from urllib.parse import urljoin
 
 import pyvips
+from bs4 import BeautifulSoup
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from typing_extensions import override
@@ -134,12 +135,6 @@ pyvips.block_untrusted_set(True)
 
 class BadImageError(JsonableError):
     code = ErrorCode.BAD_IMAGE
-
-
-def user_uploads_or_external(url: str) -> bool:
-    return not url_has_allowed_host_and_scheme(url, allowed_hosts=None) or url.startswith(
-        "/user_uploads/"
-    )
 
 
 def generate_thumbnail_url(path: str, size: str = "0x0") -> str:
@@ -321,3 +316,89 @@ def split_thumbnail_path(file_path: str) -> tuple[str, BaseThumbnailFormat]:
     assert thumbnail_format is not None
     path_id = "/".join(path_parts[1:])
     return path_id, thumbnail_format
+
+
+def get_user_upload_previews(realm_id: int, content: str) -> dict[str, tuple[str, bool] | None]:
+    matches = re.findall(r"/user_uploads/(\d+/[/\w.-]+)", content)
+    upload_preview_data: dict[str, tuple[str, bool] | None] = {}
+    for image_attachment in ImageAttachment.objects.filter(realm_id=realm_id, path_id__in=matches):
+        if image_attachment.thumbnail_metadata == []:
+            # Image exists, and header of it parsed as a valid image,
+            # but has not been thumbnailed yet; we will render a
+            # spinner.
+            upload_preview_data[image_attachment.path_id] = None
+        else:
+            upload_preview_data[image_attachment.path_id] = get_default_thumbnail_url(
+                image_attachment
+            )
+    return upload_preview_data
+
+
+def get_default_thumbnail_url(image_attachment: ImageAttachment) -> tuple[str, bool]:
+    # For "dumb" clients which cannot rewrite it into their
+    # preferred format and size, we choose the first one in
+    # THUMBNAIL_OUTPUT_FORMATS which matches the animated/not
+    # nature of the source image.
+    found_format: ThumbnailFormat | None = None
+    for thumbnail_format in THUMBNAIL_OUTPUT_FORMATS:
+        if thumbnail_format.animated == (image_attachment.frames > 1):
+            found_format = thumbnail_format
+            break
+    if found_format is None:
+        # No animated thumbnail formats exist somehow, and the
+        # image is animated?  Just take the first thumbnail
+        # format.
+        found_format = THUMBNAIL_OUTPUT_FORMATS[0]
+    return (
+        "/user_uploads/" + get_image_thumbnail_path(image_attachment, found_format),
+        found_format.animated,
+    )
+
+
+def rewrite_thumbnailed_images(
+    rendered_content: str,
+    images: dict[str, tuple[str, bool] | None],
+    to_delete: set[str] | None = None,
+) -> str | None:
+    if not images and not to_delete:
+        return None
+
+    parsed_message = BeautifulSoup(rendered_content, "lxml")
+
+    changed = False
+    for inline_image_div in parsed_message.find_all("div", class_="message_inline_image"):
+        image_link = inline_image_div.find("a")
+        if (
+            image_link is None
+            or image_link["href"] is None
+            or not image_link["href"].startswith("/user_uploads/")
+        ):
+            continue
+        image_tag = image_link.find("img", class_="image-loading-placeholder")
+        if image_tag is None:
+            continue
+
+        path_id = image_link["href"][len("/user_uploads/") :]
+        if to_delete and path_id in to_delete:
+            # This was not a valid thumbnail target, for some reason.
+            # Put the original `src` back on it.
+            changed = True
+            del image_tag["class"]
+            image_tag["src"] = image_link["href"]
+            continue
+
+        image_data = images.get(path_id)
+        if image_data is None:
+            # Has not been thumbnailed yet; leave it as a spinner
+            pass
+        else:
+            changed = True
+            del image_tag["class"]
+            image_tag["src"], is_animated = image_data
+            if is_animated:
+                image_tag["data-animated"] = "true"
+
+    if changed:
+        return str(parsed_message)
+    else:
+        return None
