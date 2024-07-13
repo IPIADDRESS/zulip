@@ -9,6 +9,7 @@ import render_markdown_timestamp from "../templates/markdown_timestamp.hbs";
 import * as blueslip from "./blueslip";
 import {show_copied_confirmation} from "./copied_tooltip";
 import {$t} from "./i18n";
+import {parse_media_data} from "./lightbox";
 import * as message_store from "./message_store";
 import type {Message} from "./message_store";
 import * as people from "./people";
@@ -16,6 +17,7 @@ import * as realm_playground from "./realm_playground";
 import * as rows from "./rows";
 import * as rtl from "./rtl";
 import * as sub_store from "./sub_store";
+import * as thumbnail from "./thumbnail";
 import * as timerender from "./timerender";
 import * as user_groups from "./user_groups";
 import {user_settings} from "./user_settings";
@@ -337,4 +339,16 @@ export const update_elements = ($content: JQuery): void => {
             .contents()
             .unwrap();
     }
+
+    $content
+        .find('div.message_inline_image > a > img[src^="/user_uploads/thumbnail/"]')
+        .each(function (): void {
+            const $inline_img_thumbnail = $(this);
+            $inline_img_thumbnail.attr(
+                "src",
+                $inline_img_thumbnail
+                    .attr("src")!
+                    .replace(/\/[^/]+$/, "/" + thumbnail.preferred_format.name),
+            );
+        });
 };
