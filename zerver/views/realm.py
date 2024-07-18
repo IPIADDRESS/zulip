@@ -647,7 +647,7 @@ def update_realm_user_settings_defaults(
     if (
         dense_mode
         and web_font_size_px is not None
-        and web_font_size_px != RealmUserDefault.WEB_FONT_SIZE_PX_LEGACY
+        and web_font_size_px != RealmUserDefault.WEB_FONT_SIZE_PX_COMPACT
     ):
         raise JsonableError(
             _("Incompatible values for 'dense_mode' and 'web_font_size_px' settings.")
@@ -656,7 +656,7 @@ def update_realm_user_settings_defaults(
     if (
         dense_mode
         and web_line_height_percent is not None
-        and web_line_height_percent != RealmUserDefault.WEB_LINE_HEIGHT_PERCENT_LEGACY
+        and web_line_height_percent != RealmUserDefault.WEB_LINE_HEIGHT_PERCENT_COMPACT
     ):
         raise JsonableError(
             _("Incompatible values for 'dense_mode' and 'web_line_height_percent' settings.")

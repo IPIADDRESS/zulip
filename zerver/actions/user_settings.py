@@ -476,8 +476,8 @@ def do_change_user_setting(
 
     if setting_name in {"web_font_size_px", "web_line_height_percent"}:
         if (
-            user_profile.web_font_size_px != UserProfile.WEB_FONT_SIZE_PX_LEGACY
-            or user_profile.web_line_height_percent != UserProfile.WEB_LINE_HEIGHT_PERCENT_LEGACY
+            user_profile.web_font_size_px != UserProfile.WEB_FONT_SIZE_PX_COMPACT
+            or user_profile.web_line_height_percent != UserProfile.WEB_LINE_HEIGHT_PERCENT_COMPACT
         ):
             expected_dense_mode = False
         else:

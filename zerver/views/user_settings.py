@@ -391,7 +391,7 @@ def json_change_settings(
     if (
         dense_mode
         and web_font_size_px is not None
-        and web_font_size_px != UserProfile.WEB_FONT_SIZE_PX_LEGACY
+        and web_font_size_px != UserProfile.WEB_FONT_SIZE_PX_COMPACT
     ):
         raise JsonableError(
             _("Incompatible values for 'dense_mode' and 'web_font_size_px' settings.")
@@ -400,7 +400,7 @@ def json_change_settings(
     if (
         dense_mode
         and web_line_height_percent is not None
-        and web_line_height_percent != UserProfile.WEB_LINE_HEIGHT_PERCENT_LEGACY
+        and web_line_height_percent != UserProfile.WEB_LINE_HEIGHT_PERCENT_COMPACT
     ):
         raise JsonableError(
             _("Incompatible values for 'dense_mode' and 'web_line_height_percent' settings.")

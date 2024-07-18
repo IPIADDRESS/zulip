@@ -481,9 +481,9 @@ def do_set_realm_user_default_setting(
 
         if name in {"web_font_size_px", "web_line_height_percent"}:
             if (
-                realm_user_default.web_font_size_px != RealmUserDefault.WEB_FONT_SIZE_PX_LEGACY
+                realm_user_default.web_font_size_px != RealmUserDefault.WEB_FONT_SIZE_PX_COMPACT
                 or realm_user_default.web_line_height_percent
-                != RealmUserDefault.WEB_LINE_HEIGHT_PERCENT_LEGACY
+                != RealmUserDefault.WEB_LINE_HEIGHT_PERCENT_COMPACT
             ):
                 expected_dense_mode = False
             else:

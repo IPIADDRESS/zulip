@@ -503,8 +503,17 @@ class ChangeSettingsTest(ZulipTestCase):
 
     def test_changing_information_density_settings(self) -> None:
         hamlet = self.example_user("hamlet")
-        self.assertEqual(hamlet.dense_mode, True)
+        self.assertEqual(hamlet.dense_mode, False)
         self.login("hamlet")
+
+        data = {"web_font_size_px": 14, "web_line_height_percent": 122}
+        result = self.client_patch("/json/settings", data)
+        self.assert_json_success(result)
+        hamlet = self.example_user("hamlet")
+        self.assertEqual(hamlet.web_font_size_px, 14)
+        self.assertEqual(hamlet.web_line_height_percent, 122)
+        # dense_mode was automatically enabled.
+        self.assertEqual(hamlet.dense_mode, True)
 
         data = {"web_font_size_px": 16}
         result = self.client_patch("/json/settings", data)
@@ -513,17 +522,11 @@ class ChangeSettingsTest(ZulipTestCase):
         self.assertEqual(hamlet.web_font_size_px, 16)
         self.assertEqual(hamlet.dense_mode, False)
 
-        data = {"web_font_size_px": 14}
-        result = self.client_patch("/json/settings", data)
-        self.assert_json_success(result)
-        hamlet = self.example_user("hamlet")
-        self.assertEqual(hamlet.web_font_size_px, 14)
-        self.assertEqual(hamlet.dense_mode, True)
-
         data = {"web_line_height_percent": 140}
         result = self.client_patch("/json/settings", data)
         self.assert_json_success(result)
         hamlet = self.example_user("hamlet")
+        self.assertEqual(hamlet.web_font_size_px, 16)
         self.assertEqual(hamlet.web_line_height_percent, 140)
         self.assertEqual(hamlet.dense_mode, False)
 

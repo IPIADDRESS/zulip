@@ -1937,8 +1937,8 @@ class RealmAPITest(ZulipTestCase):
     def do_test_realm_default_setting_update_api(self, name: str) -> None:
         bool_tests: list[bool] = [False, True]
         test_values: dict[str, Any] = dict(
-            web_font_size_px=[UserProfile.WEB_FONT_SIZE_PX_LEGACY],
-            web_line_height_percent=[UserProfile.WEB_LINE_HEIGHT_PERCENT_LEGACY],
+            web_font_size_px=[UserProfile.WEB_FONT_SIZE_PX_COMPACT],
+            web_line_height_percent=[UserProfile.WEB_LINE_HEIGHT_PERCENT_COMPACT],
             color_scheme=UserProfile.COLOR_SCHEME_CHOICES,
             web_home_view=["recent_topics", "inbox", "all_messages"],
             emojiset=[emojiset["key"] for emojiset in RealmUserDefault.emojiset_choices()],
@@ -1992,8 +1992,15 @@ class RealmAPITest(ZulipTestCase):
 
     def test_update_default_information_density_settings(self) -> None:
         realm = get_realm("zulip")
+
+        # Start with the legacy settings configuration
         realm_user_default = RealmUserDefault.objects.get(realm=realm)
-        self.assertEqual(realm_user_default.dense_mode, True)
+        realm_user_default.dense_mode = False
+        realm_user_default.web_font_size_px = RealmUserDefault.WEB_FONT_SIZE_PX_COMPACT
+        realm_user_default.web_line_height_percent = (
+            RealmUserDefault.WEB_LINE_HEIGHT_PERCENT_COMPACT
+        )
+        realm_user_default.save()
         self.login("iago")
 
         data = {"web_font_size_px": 16}
